@@ -1,5 +1,6 @@
 use std::io::{self, BufRead, Write};
 use crate::InputBuffer;
+use crate::lexer::{tokenize, TokenKind};
 
 /// 命令运行后发生了什么
 #[derive(Debug, PartialEq, Eq)]
@@ -64,19 +65,44 @@ pub fn read_input(reader: &mut impl BufRead, input: &mut InputBuffer) -> bool {
 }
 
 pub fn do_meta_command(line: &str) -> MetaCommandResult {
-    match line {
+    // 拆出第一个单词，这样命令就可以带参数：
+    // `.tokens SELECT 1` -> ("tokens", "SELECT 1")。
+    let (cmd, arg) = match line.find(char::is_whitespace) {
+        Some(i) => (&line[..i], line[i..].trim()),
+        None => (line, ""),
+    };
+    match cmd {
         ".exit" | ".quit" => MetaCommandResult::Exit,
         ".help" => {
-            println!(".exit      Exit the shell");
-            println!(".help      Show this message");
-            println!(".tables    List tables");
+            println!(".exit            Exit the shell");
+            println!(".help            Show this message");
+            println!(".tables          List tables");
+            println!(".tokens <sql>    Show the tokens the lexer produces");
             MetaCommandResult::Success
         }
         ".tables" => {
             println!("(no tables yet)");
             MetaCommandResult::Success
         }
+        ".tokens" => {
+            print_tokens(arg);
+            MetaCommandResult::Success
+        }
         _ => MetaCommandResult::Unrecognized,
+    }
+}
+
+pub fn print_tokens(sql: &str) {
+    match tokenize(sql) {
+        Ok(tokens) => {
+            for token in tokens {
+                if token.kind == TokenKind::Eof {
+                    break;
+                }
+                println!("{:>4}  {:?}", token.pos, token.kind);
+            }
+        }
+        Err(err) => println!("{err}"),
     }
 }
 
