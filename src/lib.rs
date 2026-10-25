@@ -1,5 +1,7 @@
+pub mod ast;
 pub mod error;
 pub mod lexer;
+pub mod parser;
 pub mod repl;
 
 //// 保存一行用户的输入

@@ -1,6 +1,7 @@
 use std::io::{self, BufRead, Write};
 use crate::InputBuffer;
 use crate::lexer::{tokenize, TokenKind};
+use crate::parser::parse_expression;
 
 /// 命令运行后发生了什么
 #[derive(Debug, PartialEq, Eq)]
@@ -86,6 +87,11 @@ pub fn do_meta_command(line: &str) -> MetaCommandResult {
         }
         ".tokens" => {
             print_tokens(arg);
+            println!(".parse <expr>    Show how an expression is parsed");
+            MetaCommandResult::Success
+        },
+        ".parse" => {
+            print_parsed_expression(arg);
             MetaCommandResult::Success
         }
         _ => MetaCommandResult::Unrecognized,
@@ -101,6 +107,17 @@ pub fn print_tokens(sql: &str) {
                 }
                 println!("{:>4}  {:?}", token.pos, token.kind);
             }
+        }
+        Err(err) => println!("{err}"),
+    }
+}
+
+/// `.parse` 背后的调试辅助函数：打印完全加括号的形式和整棵树。
+pub fn print_parsed_expression(src: &str) {
+    match parse_expression(src) {
+        Ok(expr) => {
+            println!("{expr}");
+            println!("{expr:#?}");
         }
         Err(err) => println!("{err}"),
     }
